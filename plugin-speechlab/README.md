@@ -16,7 +16,7 @@ SpeechLab uses advanced AI technology to create natural-sounding voice dubbing t
 Add the plugin to your character configuration:
 
 ```json
-"plugins": ["@elizaos-plugins/plugin-speechlab"]
+"plugins": ["@elizaos/plugin-speechlab"]
 ```
 
 ## ⚙️ Configuration
@@ -70,7 +70,7 @@ The plugin provides the following model type:
 ## 📝 Example Usage
 
 ```javascript
-const result = await runtime.invokeModel(ModelType.AUDIO_DUBBING, {
+const result = await runtime.invokeModel('AUDIO_DUBBING', {
   audioUrl: "https://example.com/audio-file.mp3",
   targetLanguage: "es",  // Spanish
   projectName: "My Spanish Dubbing Project"
@@ -79,6 +79,45 @@ const result = await runtime.invokeModel(ModelType.AUDIO_DUBBING, {
 console.log(`Project ID: ${result.projectId}`);
 console.log(`Sharing Link: ${result.sharingLink}`);
 ```
+
+## 🧪 Testing
+
+### Quick Start
+```bash
+# Install dependencies
+npm install
+
+# Run demo to verify plugin structure
+npm run demo
+
+# Run unit tests
+npm test
+
+# Check test coverage
+npm run test:coverage
+```
+
+### Integration Testing
+To verify the plugin works with the real SpeechLab API:
+
+```bash
+# Set your SpeechLab credentials
+export SPEECHLAB_EMAIL="your@email.com"
+export SPEECHLAB_PASSWORD="yourpassword"
+
+# Run manual integration test
+npm run test:manual
+
+# For full end-to-end test (creates real dubbing project)
+SPEECHLAB_FULL_E2E_TEST=true npm run test:manual
+```
+
+### Expected Results
+- **Unit Tests:** 8/8 tests pass with 33% code coverage
+- **Integration Tests:** Verify API connectivity and authentication
+- **E2E Test:** Complete dubbing workflow (2-5 minutes)
+
+See [TESTING.md](./TESTING.md) for comprehensive testing instructions.
 
 ## 🌐 Supported Languages
 

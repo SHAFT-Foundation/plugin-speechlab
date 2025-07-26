@@ -4,11 +4,11 @@ import {
   type Plugin,
   logger,
   parseBooleanFromText,
-} from '@elizaos/core';
-import axios, { AxiosInstance, AxiosError } from 'axios';
+} from "@elizaos/core";
+import axios, { AxiosInstance, AxiosError } from "axios";
 
 // API Constants
-const API_BASE_URL = 'https://translate-api.speechlab.ai';
+const API_BASE_URL = "https://translate-api.speechlab.ai";
 
 // API Client Interfaces
 interface LoginPayload {
@@ -31,7 +31,7 @@ interface CreateDubPayload {
   dubAccent: string;
   unitType: string;
   mediaFileURI: string;
-  voiceMatchingMode: 'source' | 'native';
+  voiceMatchingMode: "source" | "native";
   thirdPartyID: string;
 }
 
@@ -51,11 +51,11 @@ interface GenerateLinkResponse {
 export interface DubMedia {
   _id: string;
   uri: string;
-  category: string; 
+  category: string;
   contentTYpe: string;
-  format: string; 
+  format: string;
   operationType: string;
-  presignedURL?: string; 
+  presignedURL?: string;
 }
 
 // Define the structure for the main Dub object within a Translation
@@ -83,14 +83,14 @@ export interface Project {
     name: string;
     sourceLanguage: string;
     targetLanguage: string;
-    status: string; 
+    status: string;
   };
   translations?: Translation[];
 }
 
 // Update GetProjectsResponse to use the refined Project type
 interface GetProjectsResponse {
-  results: Array<Project>; 
+  results: Array<Project>;
   totalResults: number;
 }
 
@@ -102,7 +102,7 @@ let tokenExpiryTime: number | null = null;
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
   timeout: 30000, // 30 second timeout
 });
@@ -113,14 +113,21 @@ const apiClient: AxiosInstance = axios.create({
 function handleApiError(error: unknown, context: string): void {
   if (axios.isAxiosError(error)) {
     const axiosError = error as AxiosError;
-    logger.log(`[🤖 SpeechLab] ❌ API Error during ${context}: ${axiosError.message}`);
+    logger.log(
+      `[🤖 SpeechLab] ❌ API Error during ${context}: ${axiosError.message}`,
+    );
     if (axiosError.response) {
       logger.log(`[🤖 SpeechLab] Status: ${axiosError.response.status}`);
-      logger.log(`[🤖 SpeechLab] Data: ${JSON.stringify(axiosError.response.data)}`);
+      logger.log(
+        `[🤖 SpeechLab] Data: ${JSON.stringify(axiosError.response.data)}`,
+      );
     } else if (axiosError.request) {
-      logger.log('[🤖 SpeechLab] No response received:', axiosError.request);
+      logger.log("[🤖 SpeechLab] No response received:", axiosError.request);
     } else {
-      logger.log('[🤖 SpeechLab] Error setting up request:', axiosError.message);
+      logger.log(
+        "[🤖 SpeechLab] Error setting up request:",
+        axiosError.message,
+      );
     }
   } else {
     logger.log(`[🤖 SpeechLab] ❌ Non-Axios error during ${context}:`, error);
@@ -131,7 +138,7 @@ function handleApiError(error: unknown, context: string): void {
  * Invalidates the cached authentication token.
  */
 function invalidateAuthToken(): void {
-  logger.log('[🤖 SpeechLab] Invalidating cached authentication token.');
+  logger.log("[🤖 SpeechLab] Invalidating cached authentication token.");
   cachedToken = null;
   tokenExpiryTime = null;
 }
@@ -139,30 +146,40 @@ function invalidateAuthToken(): void {
 /**
  * Authenticates with the SpeechLab API to get a JWT token.
  */
-async function getAuthToken(email: string, password: string): Promise<string | null> {
+async function getAuthToken(
+  email: string,
+  password: string,
+): Promise<string | null> {
   // Basic check: If we have a token, return it (improve with expiry check later)
   if (cachedToken) {
-    logger.log('[🤖 SpeechLab] Using cached authentication token.');
+    logger.log("[🤖 SpeechLab] Using cached authentication token.");
     return cachedToken;
   }
 
-  logger.log('[🤖 SpeechLab] No cached token. Authenticating with API...');
+  logger.log("[🤖 SpeechLab] No cached token. Authenticating with API...");
   const loginPayload: LoginPayload = { email, password };
 
   try {
-    const response = await apiClient.post<LoginResponse>('/v1/auth/login', loginPayload);
+    const response = await apiClient.post<LoginResponse>(
+      "/v1/auth/login",
+      loginPayload,
+    );
     const token = response.data?.tokens?.accessToken?.jwtToken;
 
     if (token) {
-      logger.log('[🤖 SpeechLab] ✅ Successfully authenticated and obtained token.');
+      logger.log(
+        "[🤖 SpeechLab] ✅ Successfully authenticated and obtained token.",
+      );
       cachedToken = token;
       return token;
     } else {
-      logger.log('[🤖 SpeechLab] ❌ Authentication successful but token not found in response.');
+      logger.log(
+        "[🤖 SpeechLab] ❌ Authentication successful but token not found in response.",
+      );
       return null;
     }
   } catch (error) {
-    handleApiError(error, 'authentication');
+    handleApiError(error, "authentication");
     return null;
   }
 }
@@ -173,14 +190,16 @@ async function getAuthToken(email: string, password: string): Promise<string | n
 async function createDubbingProject(
   email: string,
   password: string,
-  publicAudioUrl: string, 
-  projectName: string, 
-  targetLanguageCode: string, 
+  publicAudioUrl: string,
+  projectName: string,
+  targetLanguageCode: string,
   thirdPartyId: string,
-  sourceLanguageCode: string = 'en'
+  sourceLanguageCode: string = "en",
 ): Promise<string | null> {
-  logger.log(`[🤖 SpeechLab] Attempting to create dubbing project: Name="${projectName}", Source=${sourceLanguageCode}, Target=${targetLanguageCode}, 3rdPartyID=${thirdPartyId}`);
-  
+  logger.log(
+    `[🤖 SpeechLab] Attempting to create dubbing project: Name="${projectName}", Source=${sourceLanguageCode}, Target=${targetLanguageCode}, 3rdPartyID=${thirdPartyId}`,
+  );
+
   let attempt = 1;
   const maxAttempts = 2; // Initial attempt + 1 retry
 
@@ -188,49 +207,70 @@ async function createDubbingProject(
   const finalProjectName = projectName.substring(0, 100);
 
   // Map 'es' to 'es_la' for API compatibility
-  const apiTargetLanguage = targetLanguageCode === 'es' ? 'es_la' : targetLanguageCode;
-  const apiDubAccent = targetLanguageCode === 'es' ? 'es_la' : targetLanguageCode;
-  logger.log(`[🤖 SpeechLab] Mapped target language code ${targetLanguageCode} to API targetLanguage: ${apiTargetLanguage}, dubAccent: ${apiDubAccent}`);
+  const apiTargetLanguage =
+    targetLanguageCode === "es" ? "es_la" : targetLanguageCode;
+  const apiDubAccent =
+    targetLanguageCode === "es" ? "es_la" : targetLanguageCode;
+  logger.log(
+    `[🤖 SpeechLab] Mapped target language code ${targetLanguageCode} to API targetLanguage: ${apiTargetLanguage}, dubAccent: ${apiDubAccent}`,
+  );
 
   const payload: CreateDubPayload = {
     name: finalProjectName,
     sourceLanguage: sourceLanguageCode,
     targetLanguage: apiTargetLanguage, // Use mapped code
-    dubAccent: apiDubAccent,          // Use mapped code
+    dubAccent: apiDubAccent, // Use mapped code
     unitType: "whiteGlove",
     mediaFileURI: publicAudioUrl,
     voiceMatchingMode: "source",
     thirdPartyID: thirdPartyId,
   };
 
-  logger.log(`[🤖 SpeechLab] Create project payload (Attempt ${attempt}): ${JSON.stringify(payload)}`);
+  logger.log(
+    `[🤖 SpeechLab] Create project payload (Attempt ${attempt}): ${JSON.stringify(payload)}`,
+  );
 
   while (attempt <= maxAttempts) {
     const token = await getAuthToken(email, password);
     if (!token) {
-      logger.log(`[🤖 SpeechLab] ❌ Cannot create project (Attempt ${attempt}): Failed to get authentication token.`);
+      logger.log(
+        `[🤖 SpeechLab] ❌ Cannot create project (Attempt ${attempt}): Failed to get authentication token.`,
+      );
       return null; // Can't proceed without a token
     }
 
     try {
-      const response = await apiClient.post<CreateDubResponse>('/v1/projects/createProjectAndDub', payload, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const response = await apiClient.post<CreateDubResponse>(
+        "/v1/projects/createProjectAndDub",
+        payload,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
 
       const projectId = response.data?.projectId;
       if (projectId) {
-        logger.log(`[🤖 SpeechLab] ✅ Successfully created project (Attempt ${attempt}). Project ID: ${projectId} (ThirdPartyID: ${thirdPartyId})`);
+        logger.log(
+          `[🤖 SpeechLab] ✅ Successfully created project (Attempt ${attempt}). Project ID: ${projectId} (ThirdPartyID: ${thirdPartyId})`,
+        );
         return projectId;
       } else {
-        logger.log(`[🤖 SpeechLab] ❌ Project creation API call successful (Attempt ${attempt}) but projectId not found in response.`);
+        logger.log(
+          `[🤖 SpeechLab] ❌ Project creation API call successful (Attempt ${attempt}) but projectId not found in response.`,
+        );
         return null; // API succeeded but didn't return expected data
       }
-
     } catch (error) {
       const context = `project creation for ${finalProjectName} (3rdPartyID: ${thirdPartyId}) (Attempt ${attempt})`;
-      
-      if (axios.isAxiosError(error) && error.response?.status === 401 && attempt < maxAttempts) {
-        logger.log(`[🤖 SpeechLab] ⚠️ Received 401 Unauthorized on attempt ${attempt}. Invalidating token and retrying...`);
+
+      if (
+        axios.isAxiosError(error) &&
+        error.response?.status === 401 &&
+        attempt < maxAttempts
+      ) {
+        logger.log(
+          `[🤖 SpeechLab] ⚠️ Received 401 Unauthorized on attempt ${attempt}. Invalidating token and retrying...`,
+        );
         invalidateAuthToken(); // Invalidate the cached token
         attempt++;
         continue; // Go to the next iteration to retry
@@ -242,7 +282,9 @@ async function createDubbingProject(
     }
   }
 
-  logger.log(`[🤖 SpeechLab] ❌ Failed to create project after ${maxAttempts} attempts.`);
+  logger.log(
+    `[🤖 SpeechLab] ❌ Failed to create project after ${maxAttempts} attempts.`,
+  );
   return null;
 }
 
@@ -252,52 +294,74 @@ async function createDubbingProject(
 async function generateSharingLink(
   email: string,
   password: string,
-  projectId: string
+  projectId: string,
 ): Promise<string | null> {
-  logger.log(`[🤖 SpeechLab] Attempting to generate sharing link for project ID: ${projectId}`);
-  
+  logger.log(
+    `[🤖 SpeechLab] Attempting to generate sharing link for project ID: ${projectId}`,
+  );
+
   let attempt = 1;
   const maxAttempts = 2; // Initial attempt + 1 retry
 
   const payload: GenerateLinkPayload = { projectId };
-  logger.log(`[🤖 SpeechLab] Generate link payload (Attempt ${attempt}): ${JSON.stringify(payload)}`);
+  logger.log(
+    `[🤖 SpeechLab] Generate link payload (Attempt ${attempt}): ${JSON.stringify(payload)}`,
+  );
 
   while (attempt <= maxAttempts) {
     const token = await getAuthToken(email, password);
     if (!token) {
-      logger.log(`[🤖 SpeechLab] ❌ Cannot generate link (Attempt ${attempt}): Failed to get authentication token.`);
+      logger.log(
+        `[🤖 SpeechLab] ❌ Cannot generate link (Attempt ${attempt}): Failed to get authentication token.`,
+      );
       return null;
     }
 
     try {
-      const response = await apiClient.post<GenerateLinkResponse>('/v1/collaborations/generateSharingLink', payload, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const response = await apiClient.post<GenerateLinkResponse>(
+        "/v1/collaborations/generateSharingLink",
+        payload,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
 
       const link = response.data?.link;
       if (link) {
-        logger.log(`[🤖 SpeechLab] ✅ Successfully generated sharing link (Attempt ${attempt}): ${link}`);
+        logger.log(
+          `[🤖 SpeechLab] ✅ Successfully generated sharing link (Attempt ${attempt}): ${link}`,
+        );
         return link;
       } else {
-        logger.log(`[🤖 SpeechLab] ❌ Link generation successful (Attempt ${attempt}) but link not found in response.`);
+        logger.log(
+          `[🤖 SpeechLab] ❌ Link generation successful (Attempt ${attempt}) but link not found in response.`,
+        );
         return null;
       }
     } catch (error) {
       const context = `sharing link generation for project ${projectId} (Attempt ${attempt})`;
-      
-      if (axios.isAxiosError(error) && error.response?.status === 401 && attempt < maxAttempts) {
-        logger.log(`[🤖 SpeechLab] ⚠️ Received 401 Unauthorized on attempt ${attempt} for link generation. Invalidating token and retrying...`);
+
+      if (
+        axios.isAxiosError(error) &&
+        error.response?.status === 401 &&
+        attempt < maxAttempts
+      ) {
+        logger.log(
+          `[🤖 SpeechLab] ⚠️ Received 401 Unauthorized on attempt ${attempt} for link generation. Invalidating token and retrying...`,
+        );
         invalidateAuthToken();
         attempt++;
-        continue; 
+        continue;
       } else {
         handleApiError(error, context);
         return null;
       }
     }
   }
-  
-  logger.log(`[🤖 SpeechLab] ❌ Failed to generate sharing link after ${maxAttempts} attempts.`);
+
+  logger.log(
+    `[🤖 SpeechLab] ❌ Failed to generate sharing link after ${maxAttempts} attempts.`,
+  );
   return null;
 }
 
@@ -307,64 +371,89 @@ async function generateSharingLink(
 async function getProjectByThirdPartyID(
   email: string,
   password: string,
-  thirdPartyID: string
+  thirdPartyID: string,
 ): Promise<Project | null> {
-  logger.log(`[🤖 SpeechLab] Getting project status for thirdPartyID: ${thirdPartyID}`);
-  
+  logger.log(
+    `[🤖 SpeechLab] Getting project status for thirdPartyID: ${thirdPartyID}`,
+  );
+
   let attempt = 1;
   const maxAttempts = 2; // Initial attempt + 1 retry
 
   const encodedThirdPartyID = encodeURIComponent(thirdPartyID);
   const url = `/v1/projects?sortBy=createdAt%3Aasc&limit=10&page=1&expand=true&thirdPartyIDs=${encodedThirdPartyID}`;
-      
-  logger.log(`[🤖 SpeechLab] 🔍 Fetching project status from API URL (Attempt ${attempt}): ${API_BASE_URL}${url}`);
+
+  logger.log(
+    `[🤖 SpeechLab] 🔍 Fetching project status from API URL (Attempt ${attempt}): ${API_BASE_URL}${url}`,
+  );
 
   while (attempt <= maxAttempts) {
     const token = await getAuthToken(email, password);
     if (!token) {
-      logger.log(`[🤖 SpeechLab] ❌ Cannot check project status (Attempt ${attempt}): Failed to get authentication token.`);
+      logger.log(
+        `[🤖 SpeechLab] ❌ Cannot check project status (Attempt ${attempt}): Failed to get authentication token.`,
+      );
       return null;
     }
 
     try {
       const response = await apiClient.get<GetProjectsResponse>(url, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
-      
+
       if (response.data?.results && response.data.results.length > 0) {
-        const project = response.data.results[0]; 
+        const project = response.data.results[0];
         const status = project.job?.status || "UNKNOWN";
-        
-        logger.log(`[🤖 SpeechLab] ✅ (Attempt ${attempt}) Found project with ID: ${project.id} for thirdPartyID: ${thirdPartyID}`);
-        logger.log(`[🤖 SpeechLab] 📊 (Attempt ${attempt}) Project status: ${status}`);
-        logger.log(`[🤖 SpeechLab] 📋 (Attempt ${attempt}) Project details: Name: "${project.job?.name || 'Unknown'}", Source: ${project.job?.sourceLanguage || 'Unknown'}, Target: ${project.job?.targetLanguage || 'Unknown'}`);
-        logger.log(`[🤖 SpeechLab] 🔍 (Attempt ${attempt}) Found ${project.translations?.[0]?.dub?.[0]?.medias?.length || 0} media objects in first translation's first dub.`); 
+
+        logger.log(
+          `[🤖 SpeechLab] ✅ (Attempt ${attempt}) Found project with ID: ${project.id} for thirdPartyID: ${thirdPartyID}`,
+        );
+        logger.log(
+          `[🤖 SpeechLab] 📊 (Attempt ${attempt}) Project status: ${status}`,
+        );
+        logger.log(
+          `[🤖 SpeechLab] 📋 (Attempt ${attempt}) Project details: Name: "${project.job?.name || "Unknown"}", Source: ${project.job?.sourceLanguage || "Unknown"}, Target: ${project.job?.targetLanguage || "Unknown"}`,
+        );
+        logger.log(
+          `[🤖 SpeechLab] 🔍 (Attempt ${attempt}) Found ${project.translations?.[0]?.dub?.[0]?.medias?.length || 0} media objects in first translation's first dub.`,
+        );
 
         return project; // Success! Return the project details
       } else {
-        logger.log(`[🤖 SpeechLab] ⚠️ (Attempt ${attempt}) No projects found matching thirdPartyID: ${thirdPartyID}`);
+        logger.log(
+          `[🤖 SpeechLab] ⚠️ (Attempt ${attempt}) No projects found matching thirdPartyID: ${thirdPartyID}`,
+        );
         if (response.data?.totalResults !== undefined) {
-          logger.log(`[🤖 SpeechLab] API reported ${response.data.totalResults} total results for this query (Attempt ${attempt}).`);
+          logger.log(
+            `[🤖 SpeechLab] API reported ${response.data.totalResults} total results for this query (Attempt ${attempt}).`,
+          );
         }
         return null; // No project found, but API call succeeded
       }
-
     } catch (error) {
       const context = `getting project status for thirdPartyID: ${thirdPartyID} (Attempt ${attempt})`;
 
-      if (axios.isAxiosError(error) && error.response?.status === 401 && attempt < maxAttempts) {
-        logger.log(`[🤖 SpeechLab] ⚠️ Received 401 Unauthorized on attempt ${attempt} for project status check. Invalidating token and retrying...`);
+      if (
+        axios.isAxiosError(error) &&
+        error.response?.status === 401 &&
+        attempt < maxAttempts
+      ) {
+        logger.log(
+          `[🤖 SpeechLab] ⚠️ Received 401 Unauthorized on attempt ${attempt} for project status check. Invalidating token and retrying...`,
+        );
         invalidateAuthToken();
         attempt++;
-        continue; 
+        continue;
       } else {
         handleApiError(error, context);
         return null;
       }
     }
   }
-  
-  logger.log(`[🤖 SpeechLab] ❌ Failed to get project status for ${thirdPartyID} after ${maxAttempts} attempts.`);
+
+  logger.log(
+    `[🤖 SpeechLab] ❌ Failed to get project status for ${thirdPartyID} after ${maxAttempts} attempts.`,
+  );
   return null;
 }
 
@@ -374,60 +463,84 @@ async function getProjectByThirdPartyID(
 async function waitForProjectCompletion(
   email: string,
   password: string,
-  thirdPartyID: string, 
+  thirdPartyID: string,
   maxWaitTimeMs = 60 * 60 * 1000, // 1 hour default
-  checkIntervalMs = 30000 // 30 seconds default
+  checkIntervalMs = 30000, // 30 seconds default
 ): Promise<Project | null> {
   logger.log(`[🤖 SpeechLab] Waiting for project completion: ${thirdPartyID}`);
-  logger.log(`[🤖 SpeechLab] Maximum wait time: ${maxWaitTimeMs/1000/60} minutes, Check interval: ${checkIntervalMs/1000} seconds`);
-  
+  logger.log(
+    `[🤖 SpeechLab] Maximum wait time: ${maxWaitTimeMs / 1000 / 60} minutes, Check interval: ${checkIntervalMs / 1000} seconds`,
+  );
+
   const startTime = Date.now();
   let pollCount = 0;
   let lastProjectDetails: Project | null = null; // Store last retrieved details
-  
+
   while (Date.now() - startTime < maxWaitTimeMs) {
     pollCount++;
     const elapsedSeconds = ((Date.now() - startTime) / 1000).toFixed(1);
-    
-    logger.log(`[🤖 SpeechLab] 🔄 Poll #${pollCount} - Checking project status (${elapsedSeconds}s elapsed)...`);
-    
+
+    logger.log(
+      `[🤖 SpeechLab] 🔄 Poll #${pollCount} - Checking project status (${elapsedSeconds}s elapsed)...`,
+    );
+
     // Get the full project details
-    const project = await getProjectByThirdPartyID(email, password, thirdPartyID); 
+    const project = await getProjectByThirdPartyID(
+      email,
+      password,
+      thirdPartyID,
+    );
     lastProjectDetails = project; // Store the latest result
-    
+
     if (!project) {
-      logger.log(`[🤖 SpeechLab] ⚠️ Poll #${pollCount} - Could not retrieve project details, will retry in ${checkIntervalMs/1000}s...`);
+      logger.log(
+        `[🤖 SpeechLab] ⚠️ Poll #${pollCount} - Could not retrieve project details, will retry in ${checkIntervalMs / 1000}s...`,
+      );
     } else if (project.job?.status === "COMPLETE") {
       const elapsedMinutes = ((Date.now() - startTime) / 1000 / 60).toFixed(1);
-      logger.log(`[🤖 SpeechLab] ✅ Poll #${pollCount} - Project completed successfully after ${elapsedMinutes} minutes!`);
+      logger.log(
+        `[🤖 SpeechLab] ✅ Poll #${pollCount} - Project completed successfully after ${elapsedMinutes} minutes!`,
+      );
       return project; // Return the full project object on success
     } else if (project.job?.status === "FAILED") {
-      logger.log(`[🤖 SpeechLab] ❌ Poll #${pollCount} - Project failed to process!`);
+      logger.log(
+        `[🤖 SpeechLab] ❌ Poll #${pollCount} - Project failed to process!`,
+      );
       return null; // Return null on failure
     } else {
       // Calculate progress (simplified)
       const status = project.job?.status || "UNKNOWN";
-      const progressPercent = status === "PROCESSING" ? 50 : 0; 
+      const progressPercent = status === "PROCESSING" ? 50 : 0;
       let remainingTimeEstimate = "unknown";
-      
+
       if (progressPercent > 0) {
         const elapsedMs = Date.now() - startTime;
         const estimatedTotalMs = (elapsedMs / progressPercent) * 100;
         const estimatedRemainingMs = estimatedTotalMs - elapsedMs;
-        const estimatedRemainingMin = Math.ceil(estimatedRemainingMs / 1000 / 60);
+        const estimatedRemainingMin = Math.ceil(
+          estimatedRemainingMs / 1000 / 60,
+        );
         remainingTimeEstimate = `~${estimatedRemainingMin} minutes`;
       }
-      
-      logger.log(`[🤖 SpeechLab] 🕒 Poll #${pollCount} - Project status: ${status}, Progress: ${progressPercent}%, Estimated time remaining: ${remainingTimeEstimate}`);
-      logger.log(`[🤖 SpeechLab] ⏳ Poll #${pollCount} - Will check again in ${checkIntervalMs/1000}s...`);
+
+      logger.log(
+        `[🤖 SpeechLab] 🕒 Poll #${pollCount} - Project status: ${status}, Progress: ${progressPercent}%, Estimated time remaining: ${remainingTimeEstimate}`,
+      );
+      logger.log(
+        `[🤖 SpeechLab] ⏳ Poll #${pollCount} - Will check again in ${checkIntervalMs / 1000}s...`,
+      );
     }
-    
-    await new Promise(resolve => setTimeout(resolve, checkIntervalMs));
+
+    await new Promise((resolve) => setTimeout(resolve, checkIntervalMs));
   }
-  
-  const maxWaitMinutes = (maxWaitTimeMs/1000/60).toFixed(1);
-  logger.log(`[🤖 SpeechLab] ⏰ Poll #${pollCount} - Maximum wait time of ${maxWaitMinutes} minutes exceeded without project completion.`);
-  return lastProjectDetails?.job?.status === "COMPLETE" ? lastProjectDetails : null; // Return last details only if complete, else null
+
+  const maxWaitMinutes = (maxWaitTimeMs / 1000 / 60).toFixed(1);
+  logger.log(
+    `[🤖 SpeechLab] ⏰ Poll #${pollCount} - Maximum wait time of ${maxWaitMinutes} minutes exceeded without project completion.`,
+  );
+  return lastProjectDetails?.job?.status === "COMPLETE"
+    ? lastProjectDetails
+    : null; // Return last details only if complete, else null
 }
 
 /**
@@ -436,18 +549,22 @@ async function waitForProjectCompletion(
  * @returns {Object} - Object containing various SpeechLab settings.
  */
 function getSpeechLabSettings(runtime: IAgentRuntime) {
-  const getSetting = (key: string, fallback = '') =>
+  const getSetting = (key: string, fallback = "") =>
     process.env[key] || runtime.getSetting(key) || fallback;
 
   return {
-    email: getSetting('SPEECHLAB_EMAIL'),
-    password: getSetting('SPEECHLAB_PASSWORD'),
-    sourceLanguage: getSetting('SPEECHLAB_SOURCE_LANGUAGE', 'en'),
-    unitType: getSetting('SPEECHLAB_UNIT_TYPE', 'whiteGlove'),
-    voiceMatchingMode: getSetting('SPEECHLAB_VOICE_MATCHING_MODE', 'source'),
-    maxWaitTimeMinutes: parseInt(getSetting('SPEECHLAB_MAX_WAIT_TIME_MINUTES', '60')),
-    checkIntervalSeconds: parseInt(getSetting('SPEECHLAB_CHECK_INTERVAL_SECONDS', '30')),
-    debug: parseBooleanFromText(getSetting('SPEECHLAB_DEBUG', 'false')),
+    email: getSetting("SPEECHLAB_EMAIL"),
+    password: getSetting("SPEECHLAB_PASSWORD"),
+    sourceLanguage: getSetting("SPEECHLAB_SOURCE_LANGUAGE", "en"),
+    unitType: getSetting("SPEECHLAB_UNIT_TYPE", "whiteGlove"),
+    voiceMatchingMode: getSetting("SPEECHLAB_VOICE_MATCHING_MODE", "source"),
+    maxWaitTimeMinutes: parseInt(
+      getSetting("SPEECHLAB_MAX_WAIT_TIME_MINUTES", "60"),
+    ),
+    checkIntervalSeconds: parseInt(
+      getSetting("SPEECHLAB_CHECK_INTERVAL_SECONDS", "30"),
+    ),
+    debug: parseBooleanFromText(getSetting("SPEECHLAB_DEBUG", "false")),
   };
 }
 
@@ -457,40 +574,47 @@ function getSpeechLabSettings(runtime: IAgentRuntime) {
  * @type {Plugin}
  */
 export const speechLabPlugin: Plugin = {
-  name: 'speechLab',
-  description: 'SpeechLab dubbing plugin for voice translation',
+  name: "speechLab",
+  description: "SpeechLab dubbing plugin for voice translation",
   models: {
-    [ModelType.AUDIO_DUBBING]: async (runtime, options) => {
+    ["AUDIO_DUBBING"]: async (runtime, options) => {
       const settings = getSpeechLabSettings(runtime);
-      logger.log(`[🤖 SpeechLab] Using AUDIO_DUBBING with source language: ${settings.sourceLanguage}`);
-      
+      logger.log(
+        `[🤖 SpeechLab] Using AUDIO_DUBBING with source language: ${settings.sourceLanguage}`,
+      );
+
       // Check credentials
       if (!settings.email || !settings.password) {
-        throw new Error('[🤖 SpeechLab] Missing required credentials. Please set SPEECHLAB_EMAIL and SPEECHLAB_PASSWORD');
+        throw new Error(
+          "[🤖 SpeechLab] Missing required credentials. Please set SPEECHLAB_EMAIL and SPEECHLAB_PASSWORD",
+        );
       }
-      
+
       // Extract options
-      if (!options || typeof options !== 'object') {
-        throw new Error('[🤖 SpeechLab] Missing required dubbing options');
+      if (!options || typeof options !== "object") {
+        throw new Error("[🤖 SpeechLab] Missing required dubbing options");
       }
-      
+
       const { audioUrl, targetLanguage, projectName } = options as {
         audioUrl?: string;
         targetLanguage?: string;
         projectName?: string;
       };
-      
+
       if (!audioUrl) {
-        throw new Error('[🤖 SpeechLab] Missing required audioUrl parameter');
+        throw new Error("[🤖 SpeechLab] Missing required audioUrl parameter");
       }
-      
+
       if (!targetLanguage) {
-        throw new Error('[🤖 SpeechLab] Missing required targetLanguage parameter');
+        throw new Error(
+          "[🤖 SpeechLab] Missing required targetLanguage parameter",
+        );
       }
-      
-      const finalProjectName = projectName || `SpeechLab Dub ${new Date().toISOString()}`;
+
+      const finalProjectName =
+        projectName || `SpeechLab Dub ${new Date().toISOString()}`;
       const thirdPartyId = `eliza-${Date.now()}-${targetLanguage}`;
-      
+
       try {
         // Create the dubbing project
         const projectId = await createDubbingProject(
@@ -500,89 +624,100 @@ export const speechLabPlugin: Plugin = {
           finalProjectName,
           targetLanguage,
           thirdPartyId,
-          settings.sourceLanguage
+          settings.sourceLanguage,
         );
-        
+
         if (!projectId) {
-          throw new Error('[🤖 SpeechLab] Failed to create dubbing project');
+          throw new Error("[🤖 SpeechLab] Failed to create dubbing project");
         }
-        
-        logger.log(`[🤖 SpeechLab] Successfully created dubbing project with ID: ${projectId}`);
-        
+
+        logger.log(
+          `[🤖 SpeechLab] Successfully created dubbing project with ID: ${projectId}`,
+        );
+
         // Wait for the project to complete
-        logger.log(`[🤖 SpeechLab] Waiting for project to complete (this may take several minutes)...`);
+        logger.log(
+          `[🤖 SpeechLab] Waiting for project to complete (this may take several minutes)...`,
+        );
         const completedProject = await waitForProjectCompletion(
           settings.email,
           settings.password,
           thirdPartyId,
           settings.maxWaitTimeMinutes * 60 * 1000,
-          settings.checkIntervalSeconds * 1000
+          settings.checkIntervalSeconds * 1000,
         );
-        
+
         if (!completedProject) {
-          throw new Error('[🤖 SpeechLab] Project did not complete successfully');
+          throw new Error(
+            "[🤖 SpeechLab] Project did not complete successfully",
+          );
         }
-        
+
         // Generate a sharing link
-        logger.log(`[🤖 SpeechLab] Generating sharing link for completed project...`);
+        logger.log(
+          `[🤖 SpeechLab] Generating sharing link for completed project...`,
+        );
         const sharingLink = await generateSharingLink(
           settings.email,
           settings.password,
-          projectId
+          projectId,
         );
-        
+
         if (!sharingLink) {
-          throw new Error('[🤖 SpeechLab] Failed to generate sharing link');
+          throw new Error("[🤖 SpeechLab] Failed to generate sharing link");
         }
-        
+
         // Return the complete dubbing result
         return {
           projectId,
-          status: completedProject.job?.status || 'COMPLETE',
+          status: completedProject.job?.status || "COMPLETE",
           targetLanguage,
           sharingLink,
           projectDetails: completedProject,
         };
       } catch (error) {
-        throw new Error(`[🤖 SpeechLab] Failed to complete dubbing: ${error.message || 'Unknown error occurred'}`);
+        throw new Error(
+          `[🤖 SpeechLab] Failed to complete dubbing: ${error.message || "Unknown error occurred"}`,
+        );
       }
     },
   },
   tests: [
     {
-      name: 'test speechlab',
+      name: "test speechlab",
       tests: [
         {
-          name: 'SpeechLab API credential validation',
+          name: "SpeechLab API credential validation",
           fn: async (runtime: IAgentRuntime) => {
             const settings = getSpeechLabSettings(runtime);
             if (!settings.email || !settings.password) {
-              throw new Error('Missing credentials: Please provide valid SpeechLab email and password.');
+              throw new Error(
+                "Missing credentials: Please provide valid SpeechLab email and password.",
+              );
             }
           },
         },
         {
-          name: 'SpeechLab API connection test',
+          name: "SpeechLab API connection test",
           fn: async (runtime: IAgentRuntime) => {
             try {
               const settings = getSpeechLabSettings(runtime);
               if (!settings.email || !settings.password) {
-                throw new Error('Missing credentials for connection test');
+                throw new Error("Missing credentials for connection test");
               }
-              
+
               // Test by checking if there are any existing projects
               const result = await getProjectByThirdPartyID(
                 settings.email,
                 settings.password,
-                'connection-test'
+                "connection-test",
               );
-              
+
               // We don't expect to find this project, but we should get a valid API response
-              logger.log('[🤖 SpeechLab] API connection test successful');
-              return true;
+              logger.log("[🤖 SpeechLab] API connection test successful");
             } catch (error) {
               throw new Error(
-                `Failed to connect to SpeechLab API: ${error.message || 'Unknown error occurred'}`
+                `Failed to connect to SpeechLab API: ${error.message || "Unknown error occurred"}`,
               );
             }
           },
@@ -592,4 +727,4 @@ export const speechLabPlugin: Plugin = {
   ],
 };
 
-export default speechLabPlugin; 
+export default speechLabPlugin;

@@ -1,5 +1,5 @@
 {
-  "name": "@elizaos-plugins/plugin-speechlab",
+  "name": "@elizaos/plugin-speechlab",
   "version": "1.0.0",
   "type": "module",
   "main": "dist/index.js",
@@ -7,7 +7,7 @@
   "types": "dist/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "https://github.com/elizaos-plugins/plugin-speechlab"
+    "url": "https://github.com/elizaos/eliza"
   },
   "exports": {
     "./package.json": "./package.json",
@@ -33,7 +33,13 @@
     "format": "prettier --write ./src",
     "format:check": "prettier --check ./src",
     "lint": "prettier --write ./src",
-    "demo": "tsx demo.ts"
+    "demo": "tsx demo.ts",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest",
+    "test:integration": "SPEECHLAB_INTEGRATION_TEST=true vitest run src/integration.test.ts",
+    "test:manual": "node test-integration.js",
+    "typecheck": "tsc --noEmit"
   },
   "publishConfig": {
     "access": "public"
@@ -79,6 +85,8 @@
     "@types/node": "^20.8.4",
     "prettier": "3.5.3",
     "tsx": "^4.7.0",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.2",
+    "vitest": "^1.0.0",
+    "@vitest/coverage-v8": "^1.0.0"
   }
 } 
