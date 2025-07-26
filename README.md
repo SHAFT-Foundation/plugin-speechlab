@@ -82,6 +82,156 @@ console.log(`Project ID: ${result.projectId}`);
 console.log(`Sharing Link: ${result.sharingLink}`);
 ```
 
+## Real-World Agent Use Cases
+
+### 1. Content Creator Assistant Agent
+
+**Scenario**: A YouTube creator has an ElizaOS agent that automatically processes new video uploads and creates multilingual versions.
+
+```json
+{
+  "name": "ContentCreatorBot",
+  "bio": "I help content creators expand their global reach by automatically dubbing videos into multiple languages.",
+  "plugins": ["@elizaos/plugin-speechlab"],
+  "settings": {
+    "SPEECHLAB_EMAIL": "creator@example.com",
+    "SPEECHLAB_PASSWORD": "secure_password"
+  },
+  "actions": ["PROCESS_NEW_UPLOAD"]
+}
+```
+
+**Agent Conversation:**
+```
+User: "Hey, I just uploaded a new tech review video. Can you create Spanish and French versions?"
+
+Agent: "I'll process your video and create dubbed versions in Spanish and French while preserving your voice. Let me get the audio from your latest upload..."
+
+Agent: "✅ Dubbing complete! Here are your multilingual versions:
+🇪🇸 Spanish: https://speechlab.ai/share/spanish-tech-review-xyz
+🇫🇷 French: https://speechlab.ai/share/french-tech-review-abc
+
+Both versions maintain your original voice and enthusiasm!"
+```
+
+**Implementation:**
+```javascript
+const processUploadAction = {
+  name: "PROCESS_NEW_UPLOAD",
+  handler: async (runtime, message, state) => {
+    const audioUrl = extractAudioFromVideo(message.content);
+    const targetLanguages = ['es', 'fr'];
+    const results = [];
+    
+    for (const lang of targetLanguages) {
+      const result = await runtime.invokeModel('AUDIO_DUBBING', {
+        audioUrl,
+        targetLanguage: lang,
+        projectName: `${state.videoTitle} - ${lang.toUpperCase()}`
+      });
+      
+      results.push({
+        language: lang,
+        sharingLink: result.sharingLink
+      });
+    }
+    
+    return {
+      text: `✅ Dubbing complete! Created ${results.length} versions:\n${
+        results.map(r => `🌍 ${r.language.toUpperCase()}: ${r.sharingLink}`).join('\n')
+      }`,
+      content: { dubbingResults: results }
+    };
+  }
+};
+```
+
+### 2. Corporate Training Agent
+
+**Scenario**: A multinational company uses an ElizaOS agent to automatically localize training materials for different regional offices.
+
+```json
+{
+  "name": "TrainingLocalizer",
+  "bio": "I automatically convert corporate training materials into local languages for global teams.",
+  "plugins": ["@elizaos/plugin-speechlab"],
+  "settings": {
+    "SPEECHLAB_EMAIL": "training@company.com",
+    "SPEECHLAB_PASSWORD": "corporate_pass"
+  },
+  "actions": ["LOCALIZE_TRAINING"]
+}
+```
+
+**Agent Conversation:**
+```
+HR Manager: "We need to localize the new leadership training for our European offices - German, Spanish, and Italian teams."
+
+Agent: "I'll create localized versions of your leadership training that maintain the instructor's authoritative voice in German, Spanish, and Italian. This will help preserve the impact of the original presentation.
+
+✅ Training localization complete!
+
+🇩🇪 German Team: https://speechlab.ai/share/leadership-de-xyz
+🇪🇸 Spanish Team: https://speechlab.ai/share/leadership-es-abc  
+🇮🇹 Italian Team: https://speechlab.ai/share/leadership-it-def
+
+Each version preserves the instructor's confident delivery style."
+```
+
+### 3. Podcast Distribution Agent
+
+**Scenario**: A podcast network uses an ElizaOS agent to automatically create international versions of their shows.
+
+```json
+{
+  "name": "PodcastGlobalizer",
+  "bio": "I expand podcast reach by creating authentic multilingual versions that preserve each host's unique personality.",
+  "plugins": ["@elizaos/plugin-speechlab"],
+  "settings": {
+    "SPEECHLAB_EMAIL": "podcasts@network.com",
+    "SPEECHLAB_PASSWORD": "podcast_secure"
+  },
+  "actions": ["GLOBALIZE_EPISODE"]
+}
+```
+
+**Agent Conversation:**
+```
+Producer: "Our 'Tech Talk Tuesday' episode about AI just went live. Can you create versions for our international markets?"
+
+Agent: "Perfect! I'll create international versions of your AI episode while keeping each host's personality intact. Based on your audience analytics, I'll prioritize Spanish, French, German, and Japanese markets.
+
+🎙️ International versions ready!
+
+🇪🇸 Spanish: https://speechlab.ai/share/tech-talk-es-042
+🇫🇷 French: https://speechlab.ai/share/tech-talk-fr-042  
+🇩🇪 German: https://speechlab.ai/share/tech-talk-de-042
+🇯🇵 Japanese: https://speechlab.ai/share/tech-talk-ja-042
+
+All versions preserve the hosts' enthusiasm and technical expertise."
+```
+
+### 4. Educational Institution Agent
+
+**Scenario**: A university uses an ElizaOS agent to make lectures accessible to international students.
+
+**Agent Conversation:**
+```
+Professor: "I've recorded my machine learning lecture series. Can you make it accessible to our international students?"
+
+Agent: "I'll create multilingual versions of your lecture series while preserving your teaching style and technical explanations. This will help international students follow along in their native language.
+
+✅ Lecture series localized!
+
+📚 All lectures now available in 4 languages:
+🇪🇸 Spanish Lectures: [Portal Link]
+🇨🇳 Mandarin Lectures: [Portal Link]  
+🇸🇦 Arabic Lectures: [Portal Link]
+🇫🇷 French Lectures: [Portal Link]
+
+Your teaching personality and technical clarity are preserved in every language."
+```
+
 ### Character Integration Example
 
 ```json
@@ -99,34 +249,6 @@ console.log(`Sharing Link: ${result.sharingLink}`);
     }
   ]
 }
-```
-
-### Action Implementation
-
-```javascript
-// In your character's action handler
-const dubbingAction = {
-  name: "CREATE_MULTILINGUAL_CONTENT",
-  handler: async (runtime, message, state) => {
-    const audioUrl = extractAudioUrl(message.content);
-    const targetLanguages = ['es', 'fr', 'de', 'it'];
-    
-    const results = [];
-    for (const lang of targetLanguages) {
-      const result = await runtime.invokeModel('AUDIO_DUBBING', {
-        audioUrl,
-        targetLanguage: lang,
-        projectName: `Content - ${lang.toUpperCase()}`
-      });
-      results.push(`${lang}: ${result.sharingLink}`);
-    }
-    
-    return {
-      text: `✅ Dubbing complete!\n${results.join('\n')}`,
-      content: { dubbingResults: results }
-    };
-  }
-};
 ```
 
 ## Supported Languages
